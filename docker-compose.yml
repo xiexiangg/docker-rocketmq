@@ -1,0 +1,59 @@
+version: '3.5'
+services:
+  mqserver:
+    image: foxiswho/rocketmq:server-4.3.2
+    container_name: mqserver
+    restart: always
+    ports:
+      - 9876:9876
+    volumes:
+      - ./data/server01/logs:/opt/logs
+      - ./data/server01/store:/opt/store
+    networks:
+        rmq:
+          aliases:
+            - mqserver
+
+  mqbroker:
+    image: foxiswho/rocketmq:broker-4.3.2
+    container_name: mqbroker
+    restart: always
+    ports:
+      - 10909:10909
+      - 10911:10911
+    volumes:
+      - ./data/broker01/logs:/opt/logs
+      - ./data/broker01/store:/opt/store
+      - ./conf/broker.conf:/etc/rocketmq/broker.conf
+      # - ./data/brokerconf/broker.conf:/etc/rocketmq/broker.conf
+    environment:
+        NAMESRV_ADDR: "mqserver:9876"
+        JAVA_OPTS: " -Duser.home=/opt"
+        JAVA_OPT_EXT: "-server -Xms128m -Xmx128m -Xmn128m"
+    command: mqbroker -c /etc/rocketmq/broker.conf
+    depends_on:
+      - mqserver
+    networks:
+      rmq:
+        aliases:
+          - mqbroker
+
+  mqconsole:
+    image: styletang/rocketmq-console-ng
+    container_name: mqconsole
+    restart: always
+    ports:
+      - 8088:8080
+    environment:
+        JAVA_OPTS: "-Drocketmq.namesrv.addr=mqserver:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+    depends_on:
+      - mqserver
+    networks:
+      rmq:
+        aliases:
+          - mqconsole
+
+networks:
+  rmq:
+    name: rmq
+    driver: bridge

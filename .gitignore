@@ -1,0 +1,4 @@
+data/broker01/logs/*
+data/broker01/store/*
+data/server01/logs/*
+data/server01/store/*
